@@ -26,14 +26,14 @@
 <features name="${project.artifactId}-${project.version}">
 
     <feature name="geowebcache-server-standalone" install="manual" version="${project.version}"
-             description="">
+             description="Standalone geowebcache server.">
         <bundle>mvn:ddf.catalog.geowebcache/geowebcache-server-standalone/${project.version}/war</bundle>
 
         <configfile finalname="/tilecache/geowebcache.xml">mvn:ddf.catalog.geowebcache/geowebcache-server-standalone/${project.version}/xml/geowebcache</configfile>
     </feature>
 	
 	<feature name="geowebcache-app" install="auto" version="${project.version}"
-             description="">
+             description="The GeoWebCache application provides tile caching and tile service aggregation.::DDF GeoWebCache">
 		<feature>geowebcache-server-standalone</feature>
 	</feature>
     
