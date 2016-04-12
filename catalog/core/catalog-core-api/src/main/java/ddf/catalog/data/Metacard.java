@@ -202,14 +202,14 @@ public interface Metacard extends Serializable {
      *
      * @since DDF-2.9.0
      */
-    String RESOURCE_CHECKSUM_ALGORITHM = "resource-checksum-algorithm";
+    String CHECKSUM_ALGORITHM = "checksum-algorithm";
 
     /**
      * {@link Attribute} checksum value for the {@link Metacard#RESOURCE_URI}
      *
      * @since DDF-2.9.0
      */
-    String RESOURCE_CHECKSUM = "resource-checksum";
+    String CHECKSUM = "checksum";
 
     /**
      * Returns {@link Attribute} for given attribute name.

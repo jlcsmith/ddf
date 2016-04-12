@@ -39,6 +39,10 @@
 |${ddf-branding-lowercase}.catalog.transformer.xml.XmlResponseQueueTransformer
 |Set threshold for running marshalling in parallel
 
+|<<Catalog Ingest Duplication Plugin>>
+|${ddf-branding-lowercase}.catalog.metacard.duplication.DuplicationPlugin
+|Configure rules to check for duplicate data on ingest
+
 |===
 
 .Backup Post-Ingest Plugin
@@ -149,7 +153,7 @@
 |createPermissions
 |String
 |Roles/attributes required for the create operations. Example: role=role1,role2
-|http://schemas.xmlsoap.org/ws/2005/05/ entity/claims/role=guest/>
+|http://schemasoap.org/ws/2005/05/ entity/claims/role=guest/>
 |Yes
 
 |Required Attributes
@@ -356,5 +360,38 @@ The X value will be the value that is placed within the security attribute on th
 |Response size threshold above which marshalling is run in parallel
 |50
 |true
+
+|===
+
+.Catalog Ingest Duplication Plugin
+[cols="1,1m,1,2,1,1" options="header"]
+|===
+|Name
+|Property
+|Type
+|Description
+|Default Value
+|Required
+
+|Metacard Attributes (duplicates fail ingest)
+|failOnDuplicateList
+|String  cardinality=1000
+|A list of metacard attributes used in the duplication check against the local catalog.  If a duplicate is found, the ingest will fail.
+|
+|No
+
+|Metacard attributes (duplicates cause a validation error)
+|errorOnDuplicateList
+|String  cardinality=1000
+|A list of metacard attributes used in the duplication check against the local catalog.  If a duplicate is found, the ingest will cause a metacard validation ERROR, but the ingest will succeed.
+|
+|No
+
+|Metacard attributes (duplicates cause a validation warning)
+|warnOnDuplicateList
+|String  cardinality=1000
+|A list of metacard attributes used in the duplication check against the local catalog.  If a duplicate is found, the ingest will cause a metacard validation WARNING, but the ingest will succeed.
+|checksum
+|No
 
 |===
