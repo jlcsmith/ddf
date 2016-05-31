@@ -354,8 +354,13 @@
 
     <reference id="filterBuilder" interface="ddf.catalog.filter.FilterBuilder"/>
 
+    <reference id="attributeRegistry" interface="ddf.catalog.data.AttributeRegistry"/>
+
     <reference id="defaultAttributeValueRegistry"
                interface="ddf.catalog.data.DefaultAttributeValueRegistry"/>
+
+    <reference id="injectableAttributeRegistry"
+               interface="ddf.catalog.data.InjectableAttributeRegistry"/>
 
     <!-- create the ddf bean -->
     <bean id="ddf" class="ddf.catalog.impl.CatalogFrameworkImpl">
@@ -393,7 +398,9 @@
                 <property name="mimeTypeToTransformerMapper" ref="transformerMapper"/>
                 <property name="mimeTypeMapper" ref="mimeTypeMapper"/>
                 <property name="validationQueryFactory" ref="validationQueryFactory"/>
+                <property name="attributeRegistry" ref="attributeRegistry"/>
                 <property name="defaultAttributeValueRegistry" ref="defaultAttributeValueRegistry"/>
+                <property name="injectableAttributeRegistry" ref="injectableAttributeRegistry"/>
             </bean>
         </argument>
         <property name="masker" ref="sourceListener"/>

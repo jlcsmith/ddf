@@ -17,13 +17,21 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.Test;
 
+import ddf.catalog.data.AttributeDescriptor;
+import ddf.catalog.data.AttributeRegistry;
+import ddf.catalog.data.InjectableAttributeRegistry;
 import ddf.catalog.data.MetacardType;
+import ddf.catalog.data.impl.AttributeDescriptorImpl;
+import ddf.catalog.data.impl.AttributeRegistryImpl;
 import ddf.catalog.data.impl.BasicTypes;
 import ddf.catalog.data.impl.MetacardTypeImpl;
+import ddf.catalog.data.inject.InjectableAttributeRegistryImpl;
 import ddf.catalog.transform.CatalogTransformerException;
 import ddf.catalog.transformer.xml.adapter.MetacardTypeAdapter;
 
@@ -45,14 +53,18 @@ public class TestMetacardTypeAdapter {
 
     @Test
     public void testUnmarshalWithNullTypeName() throws CatalogTransformerException {
-        MetacardTypeAdapter metacardTypeAdpater = new MetacardTypeAdapter();
+        MetacardTypeAdapter metacardTypeAdpater = new MetacardTypeAdapter(null,
+                new AttributeRegistryImpl(),
+                new InjectableAttributeRegistryImpl());
         MetacardType metacardType = metacardTypeAdpater.unmarshal(NULL_TYPE_NAME);
         assertThat(metacardType.getName(), is(BasicTypes.BASIC_METACARD.getName()));
     }
 
     @Test
     public void testUnmarshalWithEmptyTypeName() throws CatalogTransformerException {
-        MetacardTypeAdapter metacardTypeAdpater = new MetacardTypeAdapter();
+        MetacardTypeAdapter metacardTypeAdpater = new MetacardTypeAdapter(null,
+                new AttributeRegistryImpl(),
+                new InjectableAttributeRegistryImpl());
         MetacardType metacardType = metacardTypeAdpater.unmarshal(EMPTY_TYPE_NAME);
         assertThat(metacardType.getName(), is(BasicTypes.BASIC_METACARD.getName()));
     }
@@ -62,7 +74,9 @@ public class TestMetacardTypeAdapter {
         MetacardType unknownMetacardType = new MetacardTypeImpl(KNOWN_TYPE_NAME, null);
         List<MetacardType> metacardTypes = new ArrayList<MetacardType>(1);
         metacardTypes.add(unknownMetacardType);
-        MetacardTypeAdapter metacardTypeAdpater = new MetacardTypeAdapter(metacardTypes);
+        MetacardTypeAdapter metacardTypeAdpater = new MetacardTypeAdapter(metacardTypes,
+                new AttributeRegistryImpl(),
+                new InjectableAttributeRegistryImpl());
         MetacardType metacardType = metacardTypeAdpater.unmarshal(DDF_METACARD_TYPE_NAME);
         assertThat(metacardType.getName(), is(BasicTypes.BASIC_METACARD.getName()));
     }
@@ -72,22 +86,27 @@ public class TestMetacardTypeAdapter {
         MetacardType unknownMetacardType = new MetacardTypeImpl(KNOWN_TYPE_NAME, null);
         List<MetacardType> metacardTypes = new ArrayList<MetacardType>(1);
         metacardTypes.add(unknownMetacardType);
-        MetacardTypeAdapter metacardTypeAdpater = new MetacardTypeAdapter(metacardTypes);
+        MetacardTypeAdapter metacardTypeAdpater = new MetacardTypeAdapter(metacardTypes,
+                new AttributeRegistryImpl(),
+                new InjectableAttributeRegistryImpl());
         MetacardType metacardType = metacardTypeAdpater.unmarshal(UNKNOWN_TYPE_NAME);
         assertThat(metacardType.getName(), is(BasicTypes.BASIC_METACARD.getName()));
     }
 
     @Test
     public void testUnmarshalWithNullRegisteredMetacardTypes() throws CatalogTransformerException {
-        MetacardTypeAdapter metacardTypeAdpater = new MetacardTypeAdapter(NULL_METACARD_TYPES_LIST);
+        MetacardTypeAdapter metacardTypeAdpater = new MetacardTypeAdapter(NULL_METACARD_TYPES_LIST,
+                new AttributeRegistryImpl(),
+                new InjectableAttributeRegistryImpl());
         MetacardType metacardType = metacardTypeAdpater.unmarshal(UNKNOWN_TYPE_NAME);
         assertThat(metacardType.getName(), is(BasicTypes.BASIC_METACARD.getName()));
     }
 
     @Test
     public void testUnmarshalWithEmptyRegisteredMetacardTypes() throws CatalogTransformerException {
-        MetacardTypeAdapter metacardTypeAdpater =
-                new MetacardTypeAdapter(EMPTY_METACARD_TYPES_LIST);
+        MetacardTypeAdapter metacardTypeAdpater = new MetacardTypeAdapter(EMPTY_METACARD_TYPES_LIST,
+                new AttributeRegistryImpl(),
+                new InjectableAttributeRegistryImpl());
         MetacardType metacardType = metacardTypeAdpater.unmarshal(UNKNOWN_TYPE_NAME);
         assertThat(metacardType.getName(), is(BasicTypes.BASIC_METACARD.getName()));
     }
@@ -97,8 +116,37 @@ public class TestMetacardTypeAdapter {
         MetacardType knownMetacardType = new MetacardTypeImpl(KNOWN_TYPE_NAME, null);
         List<MetacardType> metacardTypes = new ArrayList<MetacardType>(1);
         metacardTypes.add(knownMetacardType);
-        MetacardTypeAdapter metacardTypeAdpater = new MetacardTypeAdapter(metacardTypes);
+        MetacardTypeAdapter metacardTypeAdpater = new MetacardTypeAdapter(metacardTypes,
+                new AttributeRegistryImpl(),
+                new InjectableAttributeRegistryImpl());
         MetacardType metacardType = metacardTypeAdpater.unmarshal(KNOWN_TYPE_NAME);
         assertThat(metacardType.getName(), is(knownMetacardType.getName()));
+    }
+
+    @Test
+    public void testInjectsAttributes() throws CatalogTransformerException {
+        AttributeRegistry attributeRegistry = new AttributeRegistryImpl();
+        AttributeDescriptor temperature = new AttributeDescriptorImpl("temperature",
+                true,
+                true,
+                false,
+                false,
+                BasicTypes.DOUBLE_TYPE);
+        attributeRegistry.register(temperature);
+
+        InjectableAttributeRegistry injectableAttributeRegistry =
+                new InjectableAttributeRegistryImpl();
+        injectableAttributeRegistry.registerAttribute(temperature.getName());
+
+        MetacardTypeAdapter adapter = new MetacardTypeAdapter(null,
+                attributeRegistry,
+                injectableAttributeRegistry);
+
+        MetacardType metacardType = adapter.unmarshal(DDF_METACARD_TYPE_NAME);
+
+        Set<AttributeDescriptor> expectedAttributeDescriptors =
+                new HashSet<>(BasicTypes.BASIC_METACARD.getAttributeDescriptors());
+        expectedAttributeDescriptors.add(temperature);
+        assertThat(metacardType.getAttributeDescriptors(), is(expectedAttributeDescriptors));
     }
 }

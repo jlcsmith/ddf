@@ -40,9 +40,9 @@ public class AttributeRegistryImplTest {
                 true,
                 false,
                 BasicTypes.STRING_TYPE);
-        assertThat(registry.registerAttribute(descriptor), is(true));
+        assertThat(registry.register(descriptor), is(true));
 
-        final Optional<AttributeDescriptor> descriptorOptional = registry.getAttributeDescriptor(
+        final Optional<AttributeDescriptor> descriptorOptional = registry.lookup(
                 "test");
         assertThat(descriptorOptional.isPresent(), is(true));
         assertThat(descriptorOptional.get(), is(descriptor));
@@ -56,13 +56,13 @@ public class AttributeRegistryImplTest {
                 true,
                 false,
                 BasicTypes.STRING_TYPE);
-        assertThat(registry.registerAttribute(descriptor), is(true));
+        assertThat(registry.register(descriptor), is(true));
 
-        Optional<AttributeDescriptor> descriptorOptional = registry.getAttributeDescriptor("test");
+        Optional<AttributeDescriptor> descriptorOptional = registry.lookup("test");
         assertThat(descriptorOptional.isPresent(), is(true));
 
-        registry.deregisterAttribute("test");
-        descriptorOptional = registry.getAttributeDescriptor("test");
+        registry.deregister("test");
+        descriptorOptional = registry.lookup("test");
         assertThat(descriptorOptional.isPresent(), is(false));
     }
 
@@ -74,7 +74,7 @@ public class AttributeRegistryImplTest {
                 true,
                 true,
                 BasicTypes.STRING_TYPE);
-        assertThat(registry.registerAttribute(descriptor1), is(true));
+        assertThat(registry.register(descriptor1), is(true));
 
         final AttributeDescriptor descriptor2 = new AttributeDescriptorImpl("test",
                 false,
@@ -82,9 +82,9 @@ public class AttributeRegistryImplTest {
                 false,
                 false,
                 BasicTypes.BINARY_TYPE);
-        assertThat(registry.registerAttribute(descriptor2), is(false));
+        assertThat(registry.register(descriptor2), is(false));
 
-        final Optional<AttributeDescriptor> descriptorOptional = registry.getAttributeDescriptor(
+        final Optional<AttributeDescriptor> descriptorOptional = registry.lookup(
                 "test");
         assertThat(descriptorOptional.isPresent(), is(true));
         assertThat(descriptorOptional.get(), is(descriptor1));
@@ -92,7 +92,7 @@ public class AttributeRegistryImplTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testNullAttributeDescriptor() {
-        registry.registerAttribute(null);
+        registry.register(null);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -103,6 +103,6 @@ public class AttributeRegistryImplTest {
                 true,
                 false,
                 BasicTypes.STRING_TYPE);
-        registry.registerAttribute(descriptor);
+        registry.register(descriptor);
     }
 }

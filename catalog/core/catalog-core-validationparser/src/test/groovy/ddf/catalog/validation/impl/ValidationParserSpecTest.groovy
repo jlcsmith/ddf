@@ -1,13 +1,16 @@
 package ddf.catalog.validation.impl
 
+import static ddf.catalog.data.impl.BasicTypes.BASIC_METACARD
 import static org.mockito.Mockito.when
 import static org.powermock.api.mockito.PowerMockito.mockStatic
 
 import ddf.catalog.data.AttributeRegistry
 import ddf.catalog.data.DefaultAttributeValueRegistry
+import ddf.catalog.data.InjectableAttributeRegistry
 import ddf.catalog.data.MetacardType
 import ddf.catalog.data.defaultvalues.DefaultAttributeValueRegistryImpl
 import ddf.catalog.data.impl.AttributeRegistryImpl
+import ddf.catalog.data.inject.InjectableAttributeRegistryImpl
 import ddf.catalog.validation.AttributeValidatorRegistry
 import ddf.catalog.validation.MetacardValidator
 import org.junit.Rule
@@ -38,6 +41,8 @@ class ValidationParserSpecTest extends Specification {
 
     DefaultAttributeValueRegistry defaultAttributeValueRegistry
 
+    InjectableAttributeRegistry injectableAttributeRegistry
+
     File file
 
     void setup() {
@@ -47,7 +52,10 @@ class ValidationParserSpecTest extends Specification {
 
         defaultAttributeValueRegistry = new DefaultAttributeValueRegistryImpl()
 
-        validationParser = new ValidationParser(attributeRegistry, attributeValidatorRegistry, defaultAttributeValueRegistry)
+        injectableAttributeRegistry = new InjectableAttributeRegistryImpl();
+
+        validationParser = new ValidationParser(attributeRegistry, attributeValidatorRegistry,
+                defaultAttributeValueRegistry, injectableAttributeRegistry)
 
         file = temporaryFolder.newFile("temp.json")
     }
@@ -97,8 +105,8 @@ class ValidationParserSpecTest extends Specification {
         validationParser.install(file)
 
         then:
-        attributeRegistry.getAttributeDescriptor("cool-attribute").isPresent()
-        attributeRegistry.getAttributeDescriptor("geospatial-goodness").isPresent()
+        attributeRegistry.lookup("cool-attribute").isPresent()
+        attributeRegistry.lookup("geospatial-goodness").isPresent()
 
         def validators = attributeValidatorRegistry.getValidators("cool-attribute")
         validators.size() == 2
@@ -167,8 +175,20 @@ class ValidationParserSpecTest extends Specification {
 
         then:
         thrown(IllegalArgumentException)
-        attributeRegistry.getAttributeDescriptor("cool-attribute").isPresent()
+        attributeRegistry.lookup("cool-attribute").isPresent()
         attributeValidatorRegistry.getValidators("cool-attribute").size() == 0
+    }
+
+    def "test injections"() {
+        setup:
+        file.withPrintWriter { it.write(injections) }
+
+        when:
+        validationParser.install(file)
+
+        then:
+        injectableAttributeRegistry.injectableAttributes(BASIC_METACARD.name) == new HashSet<>(["cool-attribute"]);
+        injectableAttributeRegistry.injectableAttributes("nitf") == new HashSet<>(["cool-attribute", "geospatial-goodness"]);
     }
 
     String valid = '''
@@ -335,6 +355,37 @@ class ValidationParserSpecTest extends Specification {
             }
         ]
     }
-}'''
+}
+'''
+
+    String injections = '''
+{
+    "attributeTypes": {
+        "cool-attribute": {
+            "type": "STRING_TYPE",
+            "stored": true,
+            "indexed": true,
+            "tokenized": false,
+            "multivalued": false
+        },
+        "geospatial-goodness": {
+            "type": "GEO_TYPE",
+            "stored": true,
+            "indexed": true,
+            "tokenized": false,
+            "multivalued": true
+        }
+    },
+    "inject": [
+        {
+            "attribute": "cool-attribute"
+        },
+        {
+            "attribute": "geospatial-goodness",
+            "metacardTypes": ["nitf"]
+        }
+    ]
+}
+'''
 
 }

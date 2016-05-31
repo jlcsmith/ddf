@@ -26,6 +26,8 @@ import org.codice.ddf.parser.ParserException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ddf.catalog.data.AttributeRegistry;
+import ddf.catalog.data.InjectableAttributeRegistry;
 import ddf.catalog.data.Metacard;
 import ddf.catalog.data.MetacardType;
 import ddf.catalog.data.impl.AttributeImpl;
@@ -42,6 +44,10 @@ public class XmlInputTransformer extends AbstractXmlTransformer implements Input
 
     private List<MetacardType> metacardTypes;
 
+    private AttributeRegistry attributeRegistry;
+
+    private InjectableAttributeRegistry injectableAttributeRegistry;
+
     public XmlInputTransformer(Parser parser) {
         super(parser);
     }
@@ -54,13 +60,14 @@ public class XmlInputTransformer extends AbstractXmlTransformer implements Input
     @Override
     public Metacard transform(InputStream input, String id)
             throws IOException, CatalogTransformerException {
-        return testXform(input, id);
+        return doTransform(input, id);
     }
 
-    private Metacard testXform(InputStream input, String id)
+    private Metacard doTransform(InputStream input, String id)
             throws IOException, CatalogTransformerException {
         ParserConfigurator parserConfigurator =
-                getParserConfigurator().setAdapter(new MetacardTypeAdapter(metacardTypes))
+                getParserConfigurator().setAdapter(new MetacardTypeAdapter(metacardTypes,
+                        attributeRegistry, injectableAttributeRegistry))
                         .setHandler(new DefaultValidationEventHandler());
 
         try {
@@ -88,4 +95,12 @@ public class XmlInputTransformer extends AbstractXmlTransformer implements Input
         this.metacardTypes = metacardTypes;
     }
 
+    public void setAttributeRegistry(AttributeRegistry attributeRegistry) {
+        this.attributeRegistry = attributeRegistry;
+    }
+
+    public void setInjectableAttributeRegistry(
+            InjectableAttributeRegistry injectableAttributeRegistry) {
+        this.injectableAttributeRegistry = injectableAttributeRegistry;
+    }
 }

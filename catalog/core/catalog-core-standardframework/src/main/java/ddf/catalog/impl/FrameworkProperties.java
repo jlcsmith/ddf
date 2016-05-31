@@ -27,7 +27,9 @@ import ddf.catalog.content.plugin.PostCreateStoragePlugin;
 import ddf.catalog.content.plugin.PostUpdateStoragePlugin;
 import ddf.catalog.content.plugin.PreCreateStoragePlugin;
 import ddf.catalog.content.plugin.PreUpdateStoragePlugin;
+import ddf.catalog.data.AttributeRegistry;
 import ddf.catalog.data.DefaultAttributeValueRegistry;
+import ddf.catalog.data.InjectableAttributeRegistry;
 import ddf.catalog.event.retrievestatus.DownloadsStatusEventPublisher;
 import ddf.catalog.federation.FederationStrategy;
 import ddf.catalog.filter.FilterBuilder;
@@ -113,7 +115,11 @@ public class FrameworkProperties {
 
     private ValidationQueryFactory validationQueryFactory;
 
+    private AttributeRegistry attributeRegistry;
+
     private DefaultAttributeValueRegistry defaultAttributeValueRegistry;
+
+    private InjectableAttributeRegistry injectableAttributeRegistry;
 
     public List<CatalogProvider> getCatalogProviders() {
         return catalogProviders;
@@ -353,6 +359,14 @@ public class FrameworkProperties {
         return this.validationQueryFactory;
     }
 
+    public void setAttributeRegistry(AttributeRegistry attributeRegistry) {
+        this.attributeRegistry = attributeRegistry;
+    }
+
+    public AttributeRegistry getAttributeRegistry() {
+        return attributeRegistry;
+    }
+
     public void setDefaultAttributeValueRegistry(
             DefaultAttributeValueRegistry defaultAttributeValueRegistry) {
         this.defaultAttributeValueRegistry = defaultAttributeValueRegistry;
@@ -360,5 +374,14 @@ public class FrameworkProperties {
 
     public DefaultAttributeValueRegistry getDefaultAttributeValueRegistry() {
         return defaultAttributeValueRegistry;
+    }
+
+    public void setInjectableAttributeRegistry(
+            InjectableAttributeRegistry injectableAttributeRegistry) {
+        this.injectableAttributeRegistry = injectableAttributeRegistry;
+    }
+
+    public InjectableAttributeRegistry getInjectableAttributeRegistry() {
+        return injectableAttributeRegistry;
     }
 }

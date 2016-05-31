@@ -115,9 +115,10 @@
         <module>catalog-core-versioning</module>
         <module>catalog-core-validator</module>
         <module>catalog-core-validationparser</module>
-        <module>catalog-core-attribute-registry</module>
+        <module>catalog-core-attributeregistry</module>
         <module>catalog-core-defaultvalues</module>
         <module>catalog-core-resourcestatusplugin</module>
         <module>catalog-core-ftp</module>
+        <module>catalog-core-injectattribute</module>
     </modules>
 </project>

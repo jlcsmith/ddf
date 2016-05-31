@@ -1,0 +1,26 @@
+{
+  "inject": [
+    {
+      "attribute": "page-count"
+    },
+    {
+      "attribute": "temperature"
+    }
+  ],
+  "attributeTypes": {
+    "page-count": {
+      "type": "INTEGER_TYPE",
+      "stored": true,
+      "indexed": true,
+      "multivalued": false,
+      "tokenized": false
+    },
+    "temperature": {
+      "type": "DOUBLE_TYPE",
+      "stored": true,
+      "indexed": true,
+      "multivalued": false,
+      "tokenized": false
+    }
+  }
+}

@@ -55,7 +55,9 @@ import ddf.catalog.data.ContentType;
 import ddf.catalog.data.Metacard;
 import ddf.catalog.data.Result;
 import ddf.catalog.data.defaultvalues.DefaultAttributeValueRegistryImpl;
+import ddf.catalog.data.impl.AttributeRegistryImpl;
 import ddf.catalog.data.impl.MetacardImpl;
+import ddf.catalog.data.inject.InjectableAttributeRegistryImpl;
 import ddf.catalog.federation.FederationException;
 import ddf.catalog.federation.base.AbstractFederationStrategy;
 import ddf.catalog.filter.proxy.builder.GeotoolsFilterBuilder;
@@ -142,7 +144,9 @@ public class FederationStrategyTest {
         props.setSourcePoller(poller);
         props.setQueryResponsePostProcessor(mock(QueryResponsePostProcessor.class));
         props.setFilterBuilder(new GeotoolsFilterBuilder());
+        props.setAttributeRegistry(new AttributeRegistryImpl());
         props.setDefaultAttributeValueRegistry(new DefaultAttributeValueRegistryImpl());
+        props.setInjectableAttributeRegistry(new InjectableAttributeRegistryImpl());
         CatalogFrameworkImpl framework = new CatalogFrameworkImpl(props);
         framework.bind(provider);
 

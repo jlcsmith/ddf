@@ -21,7 +21,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.TimeZone;
+import java.util.stream.Collectors;
 
 import javax.xml.bind.DatatypeConverter;
 
@@ -31,10 +34,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ddf.catalog.data.AttributeDescriptor;
+import ddf.catalog.data.AttributeRegistry;
 import ddf.catalog.data.AttributeType.AttributeFormat;
+import ddf.catalog.data.InjectableAttributeRegistry;
 import ddf.catalog.data.Metacard;
 import ddf.catalog.data.MetacardType;
+import ddf.catalog.data.impl.BasicTypes;
 import ddf.catalog.data.impl.MetacardImpl;
+import ddf.catalog.data.impl.MetacardTypeImpl;
 import ddf.catalog.transform.CatalogTransformerException;
 import ddf.catalog.transform.InputTransformer;
 import ddf.geo.formatter.CompositeGeometry;
@@ -42,7 +49,6 @@ import ddf.geo.formatter.CompositeGeometry;
 /**
  * Converts standard GeoJSON (geojson.org) into a Metacard. The limitation on the GeoJSON is that it
  * must conform to the {@link ddf.catalog.data.impl.BasicTypes#BASIC_METACARD} {@link MetacardType}.
- *
  */
 public class GeoJsonInputTransformer implements InputTransformer {
 
@@ -61,6 +67,10 @@ public class GeoJsonInputTransformer implements InputTransformer {
     private static final Logger LOGGER = LoggerFactory.getLogger(GeoJsonInputTransformer.class);
 
     private List<MetacardType> metacardTypes;
+
+    private AttributeRegistry attributeRegistry;
+
+    private InjectableAttributeRegistry injectableAttributeRegistry;
 
     /**
      * Transforms GeoJson (http://www.geojson.org/) into a {@link Metacard}
@@ -95,14 +105,14 @@ public class GeoJsonInputTransformer implements InputTransformer {
         }
 
         final String propertyTypeName = (String) properties.get(METACARD_TYPE_PROPERTY_KEY);
-        MetacardImpl metacard = null;
+        final MetacardType metacardType;
 
         if (propertyTypeName == null || propertyTypeName.isEmpty() || metacardTypes == null) {
             LOGGER.debug(
                     "MetacardType specified in input is null or empty.  Assuming default MetacardType");
-            metacard = new MetacardImpl();
+            metacardType = injectAttributes(BasicTypes.BASIC_METACARD);
         } else {
-            MetacardType metacardType = metacardTypes.stream()
+            MetacardType originalMetacardType = metacardTypes.stream()
                     .filter(type -> type.getName()
                             .equals(propertyTypeName))
                     .findFirst()
@@ -111,10 +121,10 @@ public class GeoJsonInputTransformer implements InputTransformer {
                                     + propertyTypeName));
 
             LOGGER.debug("Found registered MetacardType: {}", propertyTypeName);
-            metacard = new MetacardImpl(metacardType);
+            metacardType = injectAttributes(originalMetacardType);
         }
 
-        MetacardType metacardType = metacard.getMetacardType();
+        MetacardImpl metacard = new MetacardImpl(metacardType);
         String metacardTypeName = metacardType.getName();
         LOGGER.debug("Metacard type name: {}", metacardType.getName());
 
@@ -124,8 +134,8 @@ public class GeoJsonInputTransformer implements InputTransformer {
         CompositeGeometry geoJsonGeometry = null;
         if (geometryJson != null) {
             if (geometryJson.get(CompositeGeometry.TYPE_KEY) != null && (geometryJson.get(
-                    CompositeGeometry.COORDINATES_KEY) != null || geometryJson.get(
-                    CompositeGeometry.GEOMETRIES_KEY) != null)) {
+                    CompositeGeometry.COORDINATES_KEY) != null
+                    || geometryJson.get(CompositeGeometry.GEOMETRIES_KEY) != null)) {
 
                 String geometryTypeJson = geometryJson.get(CompositeGeometry.TYPE_KEY)
                         .toString();
@@ -190,6 +200,33 @@ public class GeoJsonInputTransformer implements InputTransformer {
 
     public void setMetacardTypes(List<MetacardType> metacardTypes) {
         this.metacardTypes = metacardTypes;
+    }
+
+    public void setAttributeRegistry(AttributeRegistry attributeRegistry) {
+        this.attributeRegistry = attributeRegistry;
+    }
+
+    public void setInjectableAttributeRegistry(
+            InjectableAttributeRegistry injectableAttributeRegistry) {
+        this.injectableAttributeRegistry = injectableAttributeRegistry;
+    }
+
+    private MetacardType injectAttributes(MetacardType original) {
+        String metacardTypeName = original.getName();
+
+        Set<AttributeDescriptor> injectAttributes =
+                injectableAttributeRegistry.injectableAttributes(metacardTypeName)
+                        .stream()
+                        .map(attributeRegistry::lookup)
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
+                        .collect(Collectors.toSet());
+
+        if (injectAttributes.isEmpty()) {
+            return original;
+        } else {
+            return new MetacardTypeImpl(original, injectAttributes, metacardTypeName);
+        }
     }
 
     @Override

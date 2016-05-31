@@ -20,7 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -36,10 +35,15 @@ import org.slf4j.LoggerFactory;
 
 import ddf.catalog.data.Attribute;
 import ddf.catalog.data.AttributeDescriptor;
+import ddf.catalog.data.AttributeRegistry;
+import ddf.catalog.data.InjectableAttributeRegistry;
 import ddf.catalog.data.Metacard;
 import ddf.catalog.data.MetacardType;
+import ddf.catalog.data.impl.AttributeDescriptorImpl;
+import ddf.catalog.data.impl.AttributeRegistryImpl;
 import ddf.catalog.data.impl.BasicTypes;
 import ddf.catalog.data.impl.MetacardTypeImpl;
+import ddf.catalog.data.inject.InjectableAttributeRegistryImpl;
 import ddf.catalog.transform.CatalogTransformerException;
 import ddf.catalog.transformer.xml.XmlInputTransformer;
 
@@ -47,15 +51,39 @@ public class TestXmlInputTransformer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TestXmlInputTransformer.class);
 
+    private static final String EXTENSIBLE_METACARD_TYPE = "extensible.metacard";
+
+    private static final String TEMPERATURE_KEY = "temperature";
+
+    private static final String ID = "1234567890987654321";
+
+    private static final String TITLE = "Title!";
+
     private static final String DESCRIPTION = "Description!";
 
     private static final String POINT_OF_CONTACT = "POC!";
+
+    private static final double TEMPERATURE = 101.5;
 
     private XmlInputTransformer xit;
 
     @Before
     public void setup() {
         xit = new XmlInputTransformer(new XmlParser());
+
+        AttributeRegistry attributeRegistry = new AttributeRegistryImpl();
+        attributeRegistry.register(new AttributeDescriptorImpl(TEMPERATURE_KEY,
+                true,
+                true,
+                false,
+                false,
+                BasicTypes.DOUBLE_TYPE));
+        xit.setAttributeRegistry(attributeRegistry);
+
+        InjectableAttributeRegistry injectableAttributeRegistry =
+                new InjectableAttributeRegistryImpl();
+        injectableAttributeRegistry.registerAttribute(TEMPERATURE_KEY);
+        xit.setInjectableAttributeRegistry(injectableAttributeRegistry);
     }
 
     @Test
@@ -85,15 +113,14 @@ public class TestXmlInputTransformer {
     @Test
     public void testTransformWithExtensibleMetacardType()
             throws IOException, CatalogTransformerException {
-        List<MetacardType> metacardTypes = new ArrayList<MetacardType>(1);
-        MetacardType extensibleType = new MetacardTypeImpl("extensible.metacard",
+        List<MetacardType> metacardTypes = new ArrayList<>(1);
+        MetacardType extensibleType = new MetacardTypeImpl(EXTENSIBLE_METACARD_TYPE,
                 BasicTypes.BASIC_METACARD.getAttributeDescriptors());
         metacardTypes.add(extensibleType);
         xit.setMetacardTypes(metacardTypes);
         Metacard metacard = xit.transform(new FileInputStream(
                 "src/test/resources/extensibleMetacard.xml"));
 
-        LOGGER.info("ID: {}", metacard.getId());
         LOGGER.info("Type: {}",
                 metacard.getMetacardType()
                         .getName());
@@ -107,6 +134,12 @@ public class TestXmlInputTransformer {
                     attribute.getValue()));
         }
 
+        assertThat(metacard.getMetacardType()
+                .getName(), is(EXTENSIBLE_METACARD_TYPE));
+        assertThat(metacard.getId(), is(ID));
+        assertThat(metacard.getTitle(), is(TITLE));
+        assertThat(metacard.getAttribute(TEMPERATURE_KEY)
+                .getValue(), is(TEMPERATURE));
     }
 
     @Test
@@ -123,13 +156,12 @@ public class TestXmlInputTransformer {
                     attribute.getValue()));
         }
 
-        LOGGER.info("ID: {}", metacard.getId());
         LOGGER.info("Type: {}",
                 metacard.getMetacardType()
                         .getName());
         LOGGER.info("Source: {}", metacard.getSourceId());
 
-        assertEquals("1234567890987654321", metacard.getId());
+        assertEquals(ID, metacard.getId());
         assertEquals("ddf.metacard",
                 metacard.getMetacardType()
                         .getName());
@@ -140,7 +172,7 @@ public class TestXmlInputTransformer {
                 metacard.getAttribute(Metacard.GEOGRAPHY)
                         .getValue());
 
-        assertEquals("Title!",
+        assertEquals(TITLE,
                 metacard.getAttribute(Metacard.TITLE)
                         .getValue());
 
@@ -168,9 +200,9 @@ public class TestXmlInputTransformer {
     }
 
     @Test
-    public void testFallbackToBasicMetacardForUnknowMetacardType()
-            throws FileNotFoundException, IOException, CatalogTransformerException, ParseException {
-        List<MetacardType> metacardTypes = new ArrayList<MetacardType>(1);
+    public void testFallbackToBasicMetacardForUnknownMetacardType()
+            throws IOException, CatalogTransformerException, ParseException {
+        List<MetacardType> metacardTypes = new ArrayList<>(1);
         metacardTypes.add(BasicTypes.BASIC_METACARD);
         xit.setMetacardTypes(metacardTypes);
 

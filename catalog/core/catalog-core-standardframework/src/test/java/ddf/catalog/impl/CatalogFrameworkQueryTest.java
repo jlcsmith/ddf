@@ -42,7 +42,9 @@ import org.slf4j.LoggerFactory;
 import ddf.catalog.data.ContentType;
 import ddf.catalog.data.Metacard;
 import ddf.catalog.data.defaultvalues.DefaultAttributeValueRegistryImpl;
+import ddf.catalog.data.impl.AttributeRegistryImpl;
 import ddf.catalog.data.impl.MetacardImpl;
+import ddf.catalog.data.inject.InjectableAttributeRegistryImpl;
 import ddf.catalog.federation.FederationException;
 import ddf.catalog.filter.proxy.builder.GeotoolsFilterBuilder;
 import ddf.catalog.operation.CreateResponse;
@@ -90,6 +92,8 @@ public class CatalogFrameworkQueryTest {
         props.setSourcePoller(mockPoller);
         props.setFilterBuilder(new GeotoolsFilterBuilder());
         props.setDefaultAttributeValueRegistry(new DefaultAttributeValueRegistryImpl());
+        props.setAttributeRegistry(new AttributeRegistryImpl());
+        props.setInjectableAttributeRegistry(new InjectableAttributeRegistryImpl());
         framework = new CatalogFrameworkImpl(props);
         framework.bind(provider);
     }
