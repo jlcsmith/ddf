@@ -24,5 +24,6 @@
     <name>DDF SDK Sample Transformers</name>
     <modules>
         <module>xslt-identity-input-transformer</module>
+        <module>catalog-transformer-basexml</module>
     </modules>
 </project>
