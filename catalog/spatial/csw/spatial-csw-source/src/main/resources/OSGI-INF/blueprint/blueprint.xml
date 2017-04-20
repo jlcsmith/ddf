@@ -191,7 +191,7 @@
             <value>ddf.catalog.source.CatalogStore</value>
             <value>ddf.catalog.source.FederatedSource</value>
         </interfaces>
-        <cm:managed-component class="org.codice.ddf.spatial.ogc.csw.catalog.source.TransactionalCswSourceImpl"
+        <cm:managed-component class="org.codice.ddf.spatial.ogc.csw.catalog.source.TransactionalCswStoreImpl"
                               init-method="init" destroy-method="destroy">
             <property name="context" ref="blueprintBundleContext"/>
             <property name="filterBuilder" ref="filterBuilder"/>
