@@ -44,6 +44,7 @@ import ddf.catalog.data.Attribute;
 import ddf.catalog.data.Metacard;
 import ddf.catalog.data.Result;
 import ddf.catalog.data.impl.AttributeImpl;
+import ddf.catalog.data.impl.types.AssociationsAttributes;
 import ddf.catalog.federation.FederationException;
 import ddf.catalog.operation.QueryResponse;
 import ddf.catalog.operation.impl.QueryImpl;
@@ -55,10 +56,8 @@ import ddf.catalog.source.UnsupportedQueryException;
 
 public class Associated {
 
-    private static final String ASSOCIATION_PREFIX = "metacard.associations.";
-
-    private static final Set<String> ASSOCIATION_TYPES = ImmutableSet.of(Metacard.DERIVED,
-            Metacard.RELATED);
+    private static final Set<String> ASSOCIATION_TYPES = ImmutableSet.of(AssociationsAttributes.DERIVED,
+            AssociationsAttributes.RELATED);
 
     private final EndpointUtil util;
 
@@ -69,10 +68,10 @@ public class Associated {
         this.catalogFramework = catalogFramework;
     }
 
-    public Collection<Edge> getAssociations(String metacardId)
+    public Collection<Edge> getAssociations(List<String> writableSourceIds, String metacardId)
             throws UnsupportedQueryException, SourceUnavailableException, FederationException {
-        Map<String, Metacard> metacardMap =
-                query(withNonrestrictedTags(forRootAndParents(metacardId)));
+        Map<String, Metacard> metacardMap = query(writableSourceIds, withNonrestrictedTags(
+                forRootAndParents(metacardId)));
         if (metacardMap.isEmpty()) {
             return Collections.emptyList();
         }
@@ -83,8 +82,8 @@ public class Associated {
                         .equals(metacardId))
                 .collect(Collectors.toList());
 
-        Map<String, Metacard> childMetacardMap = query(withNonrestrictedTags(forChildAssociations(
-                root)));
+        Map<String, Metacard> childMetacardMap = query(writableSourceIds, withNonrestrictedTags(
+                forChildAssociations(root)));
 
         Collection<Edge> parentEdges = createParentEdges(parents, root);
         Collection<Edge> childrenEdges = createChildEdges(childMetacardMap.values(), root);
@@ -95,10 +94,10 @@ public class Associated {
         return edges;
     }
 
-    public void putAssociations(String id, Collection<Edge> edges)
+    public void putAssociations(List<String> writableSourceIds, String id, Collection<Edge> edges)
             throws UnsupportedQueryException, SourceUnavailableException, FederationException,
             IngestException {
-        Collection<Edge> oldEdges = getAssociations(id);
+        Collection<Edge> oldEdges = getAssociations(writableSourceIds, id);
 
         List<String> ids = Stream.concat(oldEdges.stream(), edges.stream())
                 .flatMap(e -> Stream.of(e.child, e.parent))
@@ -109,7 +108,9 @@ public class Associated {
                 .distinct()
                 .collect(Collectors.toList());
 
-        Map<String, Metacard> metacards = util.getMetacards(ids, getNonrestrictedTagsFilter())
+        Map<String, Metacard> metacards = util.getMetacards(writableSourceIds,
+                ids,
+                getNonrestrictedTagsFilter())
                 .entrySet()
                 .stream()
                 .collect(Collectors.toMap(Map.Entry::getKey,
@@ -134,9 +135,10 @@ public class Associated {
             return;
         }
 
-        catalogFramework.update(new UpdateRequestImpl(changedMetacards.keySet()
-                .toArray(new String[0]), new ArrayList<>(changedMetacards.values())));
-
+        catalogFramework.update(new UpdateRequestImpl(new HashSet<>(writableSourceIds),
+                changedMetacards.keySet()
+                        .toArray(new String[0]),
+                new ArrayList<>(changedMetacards.values())));
     }
 
     private void removeEdge(Edge edge, Map<String, Metacard> metacards,
@@ -160,6 +162,11 @@ public class Associated {
         String id = edge.parent.get(Metacard.ID)
                 .toString();
         Metacard target = changedMetacards.getOrDefault(id, metacards.get(id));
+
+        if (target == null) {
+            return;
+        }
+
         ArrayList<String> values = Optional.of(target)
                 .map(m -> m.getAttribute(edge.relation))
                 .map(Attribute::getValues)
@@ -264,20 +271,22 @@ public class Associated {
 
     }
 
-    private Map<String, Metacard> query(Filter filter)
+    private Map<String, Metacard> query(List<String> writableSourceIds, Filter filter)
             throws UnsupportedQueryException, SourceUnavailableException, FederationException {
         if (filter == null) {
             return Collections.emptyMap();
         }
 
-        QueryResponse query = catalogFramework.query(new QueryRequestImpl(new QueryImpl(filter,
+        QueryRequestImpl queryRequest = new QueryRequestImpl(new QueryImpl(filter,
                 1,
-                0,
+                EndpointUtil.QUERY_DEFAULT_PAGE_SIZE,
                 SortBy.NATURAL_ORDER,
                 false,
-                TimeUnit.SECONDS.toMillis(30)), false));
+                TimeUnit.SECONDS.toMillis(30)), writableSourceIds);
 
-        return query.getResults()
+        QueryResponse queryResponse = catalogFramework.query(queryRequest);
+
+        return queryResponse.getResults()
                 .stream()
                 .map(Result::getMetacard)
                 .collect(Collectors.toMap(Metacard::getId, Function.identity()));

@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -98,11 +99,13 @@ import ddf.catalog.operation.impl.ResourceRequestById;
 import ddf.catalog.operation.impl.UpdateRequestImpl;
 import ddf.catalog.resource.ResourceNotFoundException;
 import ddf.catalog.resource.ResourceNotSupportedException;
+import ddf.catalog.source.CatalogStore;
 import ddf.catalog.source.IngestException;
 import ddf.catalog.source.SourceUnavailableException;
 import ddf.catalog.source.UnsupportedQueryException;
 import ddf.security.Subject;
 import ddf.security.SubjectUtils;
+
 import spark.servlet.SparkApplication;
 
 public class MetacardApplication implements SparkApplication {
@@ -133,13 +136,16 @@ public class MetacardApplication implements SparkApplication {
 
     private final List<MetacardType> types;
 
+    private final List<CatalogStore> catalogStores;
+
     private final Associated associated;
 
     public MetacardApplication(CatalogFramework catalogFramework, FilterBuilder filterBuilder,
             EndpointUtil endpointUtil, Validator validator, WorkspaceTransformer transformer,
             ExperimentalEnumerationExtractor enumExtractor,
             SubscriptionsPersistentStore subscriptions, List<MetacardType> types,
-            Associated associated) {
+            Associated associated,
+            List<CatalogStore> catalogStores) {
         this.catalogFramework = catalogFramework;
         this.filterBuilder = filterBuilder;
         this.util = endpointUtil;
@@ -149,6 +155,7 @@ public class MetacardApplication implements SparkApplication {
         this.subscriptions = subscriptions;
         this.types = types;
         this.associated = associated;
+        this.catalogStores = catalogStores;
     }
 
     private String getSubjectEmail() {
@@ -157,9 +164,8 @@ public class MetacardApplication implements SparkApplication {
 
     @Override
     public void init() {
-        get("/metacardtype", (req, res) -> {
-            return util.getJson(util.getMetacardTypeMap());
-        });
+
+        get("/metacardtype", (req, res) -> util.getJson(util.getMetacardTypeMap()));
 
         get("/metacard/:id", (req, res) -> {
             String id = req.params(":id");
@@ -283,7 +289,8 @@ public class MetacardApplication implements SparkApplication {
 
         get("/associations/:id", (req, res) -> {
             String id = req.params(":id");
-            return util.getJson(associated.getAssociations(id));
+            Collection<Associated.Edge> associations = associated.getAssociations(getWritableSources(), id);
+            return util.getJson(associations);
         });
 
         put("/associations/:id", (req, res) -> {
@@ -291,7 +298,7 @@ public class MetacardApplication implements SparkApplication {
             List<Associated.Edge> edges = JsonFactory.create()
                     .parser()
                     .parseList(Associated.Edge.class, req.body());
-            associated.putAssociations(id, edges);
+            associated.putAssociations(getWritableSources(), id, edges);
             return req.body();
         });
 
@@ -302,8 +309,8 @@ public class MetacardApplication implements SparkApplication {
             }
             String id = req.params(":id");
             subscriptions.addEmail(id, email);
-            return ImmutableMap.of("message",
-                    String.format("Successfully subscribed to id = %s.", id));
+            return ImmutableMap.of("message", String.format("Successfully subscribed to id = %s.",
+                    id));
         }, util::getJson);
 
         post("/unsubscribe/:id", (req, res) -> {
@@ -404,9 +411,11 @@ public class MetacardApplication implements SparkApplication {
             return util.getJson(enumExtractor.getAttributeEnumerations(req.params(":attribute")));
         });
 
-        get("/localcatalogid", (req, res) -> {
-            return String.format("{\"%s\":\"%s\"}", "local-catalog-id", catalogFramework.getId());
-        });
+        get("/localcatalogid", (req, res) -> String.format("{\"%s\":\"%s\"}",
+                        "local-catalog-id",
+                        catalogFramework.getId()));
+
+        get("/writablesources", (req, res) -> getJsonWritableSources());
 
         after((req, res) -> {
             res.type(APPLICATION_JSON);
@@ -433,12 +442,16 @@ public class MetacardApplication implements SparkApplication {
         });
 
         exception(RuntimeException.class, (ex, req, res) -> {
-            LOGGER.debug("Exception occured.", ex);
+            LOGGER.debug("Exception occurred.", ex);
             res.status(404);
             res.header(CONTENT_TYPE, APPLICATION_JSON);
             res.body(util.getJson(ImmutableMap.of("message",
                     "Could not find what you were looking for")));
         });
+    }
+
+    private String getJsonWritableSources() {
+        return util.getJson(getWritableSources());
     }
 
     private void revertMetacard(Metacard versionMetacard, String id)
@@ -611,15 +624,21 @@ public class MetacardApplication implements SparkApplication {
             for (AttributeChange attributeChange : changeset.getAttributes()) {
                 for (String id : changeset.getIds()) {
                     List<String> values = attributeChange.getValues();
-                    Metacard result = results.get(id)
-                            .getMetacard();
+
+                    Result result = results.get(id);
+                    if (result == null) {
+                        LOGGER.debug("Metacard with id {} not found in result set", id);
+                        continue;
+                    }
+
+                    Metacard metacard = result.getMetacard();
 
                     Function<Serializable, Serializable> mapFunc = Function.identity();
-                    if (isChangeTypeDate(attributeChange, result)) {
+                    if (isChangeTypeDate(attributeChange, metacard)) {
                         mapFunc = mapFunc.andThen(util::parseDate);
                     }
 
-                    result.setAttribute(new AttributeImpl(attributeChange.getAttribute(),
+                    metacard.setAttribute(new AttributeImpl(attributeChange.getAttribute(),
                             values.stream()
                                     .filter(Objects::nonNull)
                                     .map(mapFunc)
@@ -691,5 +710,11 @@ public class MetacardApplication implements SparkApplication {
         public InputStream openStream() throws IOException {
             return supplier.get();
         }
+    }
+
+    private List<String> getWritableSources() {
+        List<String> stringList = catalogStores.stream().map(CatalogStore::getId).collect(Collectors.toList());
+        stringList.add(catalogFramework.getId());
+        return stringList;
     }
 }

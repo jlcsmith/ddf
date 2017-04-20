@@ -99,6 +99,7 @@
     <reference id="inputTransformer" interface="ddf.catalog.transform.InputTransformer"
                filter="(id=xml)"/>
 
+
     <reference-list id="metacardActionProviders" interface="ddf.action.ActionProvider"
                     filter="(id=catalog.data.metacard.*)"/>
 
@@ -177,6 +178,13 @@
         <argument ref="catalogFramework"/>
     </bean>
 
+
+    <bean id="catalogStoreSortedList" class="ddf.catalog.util.impl.SortedServiceList"/>
+    <reference-list id="catalogStores" interface="ddf.catalog.source.CatalogStore"
+                    availability="optional">
+        <reference-listener bind-method="bindPlugin" unbind-method="unbindPlugin" ref="catalogStoreSortedList"/>
+    </reference-list>
+
     <bean id="metacardApplication" class="org.codice.ddf.catalog.ui.metacard.MetacardApplication">
         <argument ref="catalogFramework"/>
         <argument ref="filterBuilder"/>
@@ -189,6 +197,7 @@
             <reference-list interface="ddf.catalog.data.MetacardType"/>
         </argument>
         <argument ref="associated"/>
+        <argument ref="catalogStoreSortedList"/>
     </bean>
 
     <bean id="queryApplication" class="org.codice.ddf.catalog.ui.query.QueryApplication">

@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
 
 import javax.ws.rs.NotFoundException;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.boon.json.JsonFactory;
 import org.boon.json.JsonParserFactory;
 import org.boon.json.JsonSerializerFactory;
@@ -61,6 +62,7 @@ import ddf.catalog.data.Result;
 import ddf.catalog.federation.FederationException;
 import ddf.catalog.filter.FilterBuilder;
 import ddf.catalog.impl.filter.GeoToolsFunctionFactory;
+import ddf.catalog.operation.QueryRequest;
 import ddf.catalog.operation.QueryResponse;
 import ddf.catalog.operation.impl.QueryImpl;
 import ddf.catalog.operation.impl.QueryRequestImpl;
@@ -68,6 +70,9 @@ import ddf.catalog.source.SourceUnavailableException;
 import ddf.catalog.source.UnsupportedQueryException;
 
 public class EndpointUtil {
+
+    public static final Integer QUERY_DEFAULT_PAGE_SIZE = 2000000000;
+
     private final List<MetacardType> metacardTypes;
 
     private final CatalogFramework catalogFramework;
@@ -77,8 +82,6 @@ public class EndpointUtil {
     private final List<InjectableAttribute> injectableAttributes;
 
     private final AttributeRegistry attributeRegistry;
-
-    private static final int DEFAULT_PAGE_SIZE = 10;
 
     private static final String ISO_8601_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
 
@@ -161,15 +164,16 @@ public class EndpointUtil {
         return getMetacards(Metacard.ID, ids, tagFilter);
     }
 
-    public Map<String, Result> getMetacards(Collection<String> ids, Filter tagFilter)
+    public Map<String, Result> getMetacards(List<String> writableSources, Collection<String> ids, Filter tagFilter)
             throws UnsupportedQueryException, SourceUnavailableException, FederationException {
-        return getMetacards(Metacard.ID, ids, tagFilter);
+        return getMetacards(writableSources, Metacard.ID, ids, tagFilter);
     }
 
     public Map<String, Result> getMetacards(String attributeName, Collection<String> ids,
             String tag)
             throws UnsupportedQueryException, SourceUnavailableException, FederationException {
-        return getMetacards(attributeName,
+        return getMetacards(null,
+                attributeName,
                 ids,
                 filterBuilder.attribute(Metacard.TAGS)
                         .is()
@@ -177,7 +181,7 @@ public class EndpointUtil {
                         .text(tag));
     }
 
-    public Map<String, Result> getMetacards(String attributeName, Collection<String> ids,
+    public Map<String, Result> getMetacards(List<String> writableSources, String attributeName, Collection<String> ids,
             Filter tagFilter)
             throws UnsupportedQueryException, SourceUnavailableException, FederationException {
         if (ids.isEmpty()) {
@@ -195,13 +199,27 @@ public class EndpointUtil {
         }
 
         Filter queryFilter = filterBuilder.anyOf(filters);
-        QueryResponse response = catalogFramework.query(new QueryRequestImpl(new QueryImpl(
-                queryFilter,
-                1,
-                -1,
-                SortBy.NATURAL_ORDER,
-                false,
-                TimeUnit.SECONDS.toMillis(10)), false));
+        QueryRequest queryRequest;
+
+        if (CollectionUtils.isEmpty(writableSources)) {
+            queryRequest = new QueryRequestImpl(new QueryImpl(
+                    queryFilter,
+                    1,
+                    -1,
+                    SortBy.NATURAL_ORDER,
+                    false,
+                    TimeUnit.SECONDS.toMillis(10)), false);
+        } else {
+            queryRequest = new QueryRequestImpl(new QueryImpl(
+                    queryFilter,
+                    1, QUERY_DEFAULT_PAGE_SIZE,
+                    SortBy.NATURAL_ORDER,
+                    false,
+                    TimeUnit.SECONDS.toMillis(10)), writableSources);
+        }
+
+        QueryResponse response = catalogFramework.query(queryRequest);
+
         Map<String, Result> results = new HashMap<>();
         for (Result result : response.getResults()) {
             results.put(result.getMetacard()

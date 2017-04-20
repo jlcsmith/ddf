@@ -186,9 +186,12 @@
 
     <cm:managed-service-factory
             id="org.codice.ddf.spatial.ogc.csw.catalog.source.CswTransactionalFederatedSource.id"
-            factory-pid="Csw_Transactional_Federated_Source"
-            interface="ddf.catalog.source.FederatedSource">
-        <cm:managed-component class="org.codice.ddf.spatial.ogc.csw.catalog.source.TransactionalCswStoreImpl"
+            factory-pid="Csw_Transactional_Federated_Source">
+        <interfaces>
+            <value>ddf.catalog.source.CatalogStore</value>
+            <value>ddf.catalog.source.FederatedSource</value>
+        </interfaces>
+        <cm:managed-component class="org.codice.ddf.spatial.ogc.csw.catalog.source.TransactionalCswSourceImpl"
                               init-method="init" destroy-method="destroy">
             <property name="context" ref="blueprintBundleContext"/>
             <property name="filterBuilder" ref="filterBuilder"/>
