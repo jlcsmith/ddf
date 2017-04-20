@@ -627,8 +627,7 @@ public class MetacardApplication implements SparkApplication {
 
                     Result result = results.get(id);
                     if (result == null) {
-                        LOGGER.debug("Metacard with id {} not found in result set", id);
-                        continue;
+                        throw new IngestException(String.format("Metacard with id %s not found in result set", id));
                     }
 
                     Metacard metacard = result.getMetacard();

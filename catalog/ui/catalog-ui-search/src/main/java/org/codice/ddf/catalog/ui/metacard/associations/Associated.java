@@ -142,10 +142,15 @@ public class Associated {
     }
 
     private void removeEdge(Edge edge, Map<String, Metacard> metacards,
-            /*Mutable*/ Map<String, Metacard> changedMetacards) {
+            /*Mutable*/ Map<String, Metacard> changedMetacards) throws IngestException {
         String id = edge.parent.get(Metacard.ID)
                 .toString();
         Metacard target = changedMetacards.getOrDefault(id, metacards.get(id));
+
+        if (target == null) {
+            throw new IngestException(String.format("Could not find metacard with id %s", id));
+        }
+
         ArrayList<String> values = Optional.of(target)
                 .map(m -> m.getAttribute(edge.relation))
                 .map(Attribute::getValues)
@@ -158,13 +163,13 @@ public class Associated {
     }
 
     private void addEdge(Edge edge, Map<String, Metacard> metacards,
-            Map<String, Metacard> changedMetacards) {
+            Map<String, Metacard> changedMetacards) throws IngestException {
         String id = edge.parent.get(Metacard.ID)
                 .toString();
         Metacard target = changedMetacards.getOrDefault(id, metacards.get(id));
 
         if (target == null) {
-            return;
+            throw new IngestException(String.format("Could not find metacard with id %s", id));
         }
 
         ArrayList<String> values = Optional.of(target)
