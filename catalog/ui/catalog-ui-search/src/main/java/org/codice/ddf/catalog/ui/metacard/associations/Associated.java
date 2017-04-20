@@ -279,7 +279,7 @@ public class Associated {
 
         QueryRequestImpl queryRequest = new QueryRequestImpl(new QueryImpl(filter,
                 1,
-                EndpointUtil.QUERY_DEFAULT_PAGE_SIZE,
+                EndpointUtil.DEFAULT_QUERY_PAGE_SIZE,
                 SortBy.NATURAL_ORDER,
                 false,
                 TimeUnit.SECONDS.toMillis(30)), writableSourceIds);

@@ -43,6 +43,7 @@ import org.codice.ddf.itests.common.AbstractIntegrationTest;
 import org.codice.ddf.itests.common.annotations.BeforeExam;
 import org.codice.ddf.itests.common.csw.mock.FederatedCswMockServer;
 import org.codice.ddf.itests.common.utils.LoggingUtils;
+import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -144,15 +145,20 @@ public class TestCatalogSearchUi extends AbstractIntegrationTest {
         }
     }
 
+    @After
+    public void tearDown() {
+        clearCatalog();
+    }
+
     @Test
     public void testGuestCantCreateWorkspace() throws Exception {
-        Map<String, String> workspace = ImmutableMap.of(Core.TITLE, "my workspace");
+        Map<String, String> workspace = ImmutableMap.of("title", "my workspace");
         expect(asGuest().body(stringify(workspace)), 404).post(workspaceApi());
     }
 
     @Test
     public void testGuestCanCreateWorkspacesForOthers() {
-        Map<String, String> workspace = ImmutableMap.of(Core.TITLE,
+        Map<String, String> workspace = ImmutableMap.of("title",
                 "my workspace",
                 Core.METACARD_OWNER,
                 "a@b.c");
@@ -165,7 +171,7 @@ public class TestCatalogSearchUi extends AbstractIntegrationTest {
 
     @Test
     public void testAdminCanCreateWorkspace() {
-        Map<String, String> workspace = ImmutableMap.of(Core.TITLE, "my workspace");
+        Map<String, String> workspace = ImmutableMap.of("title", "my workspace");
         Response res = expect(asAdmin().body(stringify(workspace)), 201).post(workspaceApi());
 
         Map body = parseMap(res);
@@ -244,7 +250,7 @@ public class TestCatalogSearchUi extends AbstractIntegrationTest {
     @Test
     public void testWorkspaceQueries() {
         Map<String, Object> query = ImmutableMap.<String, Object>builder()
-                .put(Core.TITLE, Core.TITLE)
+                .put("title", "title")
                 .put(QUERY_CQL, QUERY)
                 .put(QUERY_ENTERPRISE, true)
                 .build();
@@ -263,7 +269,7 @@ public class TestCatalogSearchUi extends AbstractIntegrationTest {
     @Test
     public void testWorkspaceQueriesWithSpecificSources() {
         Map<String, Object> query = ImmutableMap.<String, Object>builder()
-                .put(Core.TITLE, Core.TITLE)
+                .put("title", "title")
                 .put(QUERY_CQL, QUERY)
                 .put("src", ImmutableList.of("source a", "source b"))
                 .build();
@@ -318,8 +324,6 @@ public class TestCatalogSearchUi extends AbstractIntegrationTest {
         childId = ((CharSequenceValue) associationGetResponse.getChild()
                 .get(Core.ID)).stringValue();
         assertThat(childId, is(metacardId2));
-
-        clearCatalog();
     }
 
 
@@ -364,8 +368,6 @@ public class TestCatalogSearchUi extends AbstractIntegrationTest {
         childId = ((CharSequenceValue) associationGetResponse.getChild()
                 .get(Core.ID)).stringValue();
         assertThat(childId, is(REMOTE_METACARD_ID));
-
-        clearCatalog();
     }
 
     private static String workspaceApi() {

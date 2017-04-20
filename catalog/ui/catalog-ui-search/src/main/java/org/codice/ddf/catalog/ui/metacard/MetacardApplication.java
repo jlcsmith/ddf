@@ -699,6 +699,12 @@ public class MetacardApplication implements SparkApplication {
 
     }
 
+    private List<String> getWritableSources() {
+        List<String> stringList = catalogStores.stream().map(CatalogStore::getId).collect(Collectors.toList());
+        stringList.add(catalogFramework.getId());
+        return stringList;
+    }
+
     private static class ByteSourceWrapper extends ByteSource {
         Supplier<InputStream> supplier;
 
@@ -710,11 +716,5 @@ public class MetacardApplication implements SparkApplication {
         public InputStream openStream() throws IOException {
             return supplier.get();
         }
-    }
-
-    private List<String> getWritableSources() {
-        List<String> stringList = catalogStores.stream().map(CatalogStore::getId).collect(Collectors.toList());
-        stringList.add(catalogFramework.getId());
-        return stringList;
     }
 }

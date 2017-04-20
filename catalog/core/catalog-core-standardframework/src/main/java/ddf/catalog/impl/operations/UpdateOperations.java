@@ -511,7 +511,7 @@ public class UpdateOperations {
     private UpdateResponse performRemoteUpdate(UpdateRequest updateRequest,
             UpdateResponse updateResponse) {
         // All metacards were updated locally
-        if (updateResponse != null && updateRequest.getUpdates().size() == updateResponse.getUpdatedMetacards().size()) {
+        if (updateResponse != null && updateResponse.getUpdatedMetacards() != null && updateRequest.getUpdates().size() == updateResponse.getUpdatedMetacards().size()) {
             return updateResponse;
         }
 

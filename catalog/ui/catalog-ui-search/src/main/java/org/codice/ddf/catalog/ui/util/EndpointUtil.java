@@ -71,7 +71,7 @@ import ddf.catalog.source.UnsupportedQueryException;
 
 public class EndpointUtil {
 
-    public static final Integer QUERY_DEFAULT_PAGE_SIZE = 2000000000;
+    public static final Integer DEFAULT_QUERY_PAGE_SIZE;
 
     private final List<MetacardType> metacardTypes;
 
@@ -84,6 +84,17 @@ public class EndpointUtil {
     private final AttributeRegistry attributeRegistry;
 
     private static final String ISO_8601_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
+
+    static {
+        Integer solrQueryRowSize;
+        try {
+            solrQueryRowSize = Integer.valueOf(System.getProperty("solr.query.rows", Integer.toString(2_000_000_000)));
+        } catch (NumberFormatException e) {
+            solrQueryRowSize = 2_000_000_000;
+        }
+
+        DEFAULT_QUERY_PAGE_SIZE = solrQueryRowSize;
+    }
 
     public EndpointUtil(List<MetacardType> metacardTypes, CatalogFramework catalogFramework,
             FilterBuilder filterBuilder, List<InjectableAttribute> injectableAttributes,
@@ -212,7 +223,7 @@ public class EndpointUtil {
         } else {
             queryRequest = new QueryRequestImpl(new QueryImpl(
                     queryFilter,
-                    1, QUERY_DEFAULT_PAGE_SIZE,
+                    1, DEFAULT_QUERY_PAGE_SIZE,
                     SortBy.NATURAL_ORDER,
                     false,
                     TimeUnit.SECONDS.toMillis(10)), writableSources);
