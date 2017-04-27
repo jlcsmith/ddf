@@ -130,8 +130,6 @@ public class TestCatalog extends AbstractIntegrationTest {
 
     private static final String SAMPLE_IMAGE = "/9466484_b06f26d579_o.jpg";
 
-    private static final String SAMPLE_MP4 = "/sample.mp4";
-
     private static final String METACARD_BACKUP_DIRECTORY = "data/tmp/backup";
 
     private static final String METACARD_BACKUP_FILE_STORAGE_FEATURE = "catalog-metacard-backup-filestorage";
