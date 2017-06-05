@@ -24,7 +24,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static junit.framework.Assert.assertNotNull;
+import static junit.framework.TestCase.assertNull;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -137,6 +139,7 @@ public class TikaInputTransformerTest {
         tikaInputTransformer.setFallbackPowerpointMetacardType(getMetacardType(
                 POWERPOINT_METACARDTYPE_NAME));
         tikaInputTransformer.populateMimeTypeMap();
+        tikaInputTransformer.setUseResourceTitleAsTitle(true);
     }
 
     @Test
@@ -664,6 +667,14 @@ public class TikaInputTransformerTest {
         assertThat(metacard.getMetadata(), containsString(
                 "<meta name=\"Content-Type\" content=\"application/vnd.ms-visio.drawing\"/>"));
         assertThat(metacard.getAttribute(Core.DATATYPE).getValue(), is(DOCUMENT));
+    }
+
+    @Test
+    public void testTitleConfiguration() throws Exception {
+        ByteArrayInputStream stream = new ByteArrayInputStream("".getBytes());
+        Metacard metacard = transform(stream);
+        assertNotNull(metacard);
+        assertNull(metacard.getTitle());
     }
 
     private String convertDate(Date date) {
