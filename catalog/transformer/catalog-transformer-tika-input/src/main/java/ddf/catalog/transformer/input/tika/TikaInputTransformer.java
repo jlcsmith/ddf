@@ -13,6 +13,8 @@
  */
 package ddf.catalog.transformer.input.tika;
 
+import static org.apache.commons.lang3.Validate.notNull;
+
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
@@ -150,6 +152,8 @@ public class TikaInputTransformer implements InputTransformer {
     }
 
     private Map<String, MetacardType> mimeTypeToMetacardTypeMap = new HashMap<>();
+
+    private boolean useResourceTitleAsTitle;
 
     /**
      * Populates the mimeTypeToMetacardMap for use in determining the {@link MetacardType} that
@@ -431,13 +435,18 @@ public class TikaInputTransformer implements InputTransformer {
                 metacard = MetacardCreator.createMetacard(metadata,
                         id,
                         metadataText,
-                        extendedMetacardType);
+                        extendedMetacardType,
+                        useResourceTitleAsTitle);
 
                 for (ContentMetadataExtractor contentMetadataExtractor : contentMetadataExtractors.values()) {
                     contentMetadataExtractor.process(plainText, metacard);
                 }
             } else {
-                metacard = MetacardCreator.createMetacard(metadata, id, metadataText, metacardType);
+                metacard = MetacardCreator.createMetacard(metadata,
+                        id,
+                        metadataText,
+                        metacardType,
+                        useResourceTitleAsTitle);
             }
 
             if (StringUtils.isNotBlank(metacardContentType)) {
@@ -455,6 +464,14 @@ public class TikaInputTransformer implements InputTransformer {
             LOGGER.debug("Finished transforming input stream using Tika.");
             return metacard;
         }
+    }
+
+    /**
+     * @param useResourceTitleAsTitle must be non-null
+     */
+    public void setUseResourceTitleAsTitle(Boolean useResourceTitleAsTitle) {
+        notNull(useResourceTitleAsTitle, "useResourceTitleAsTitle must be non-null");
+        this.useResourceTitleAsTitle = useResourceTitleAsTitle;
     }
 
     @Nullable
