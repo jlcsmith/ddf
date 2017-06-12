@@ -13,8 +13,6 @@
  */
 package ddf.catalog.transformer.input.tika;
 
-import static org.apache.commons.lang3.Validate.notNull;
-
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
@@ -51,6 +49,7 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.Validate;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -470,7 +469,7 @@ public class TikaInputTransformer implements InputTransformer {
      * @param useResourceTitleAsTitle must be non-null
      */
     public void setUseResourceTitleAsTitle(Boolean useResourceTitleAsTitle) {
-        notNull(useResourceTitleAsTitle, "useResourceTitleAsTitle must be non-null");
+        Validate.notNull(useResourceTitleAsTitle, "useResourceTitleAsTitle must be non-null");
         this.useResourceTitleAsTitle = useResourceTitleAsTitle;
     }
 
