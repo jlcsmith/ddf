@@ -117,6 +117,8 @@ public class TikaInputTransformer implements InputTransformer {
     // commonTikaMetacardType represents the MetacardType to be used when an ingested product's mime
     // type does not match a mime type that is supported by the mimeTypeToMetacardTypeMap
     private MetacardType commonTikaMetacardType = null;
+    
+    private boolean useResourceTitleAsTitle;
 
     public void setCommonTikaMetacardType(MetacardType metacardType) {
         this.commonTikaMetacardType = metacardType;
@@ -151,8 +153,6 @@ public class TikaInputTransformer implements InputTransformer {
     }
 
     private Map<String, MetacardType> mimeTypeToMetacardTypeMap = new HashMap<>();
-
-    private boolean useResourceTitleAsTitle;
 
     /**
      * Populates the mimeTypeToMetacardMap for use in determining the {@link MetacardType} that
